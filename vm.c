@@ -18,7 +18,7 @@ where:
 
 Notes:
     - Implements the PM/0 virtual machine described in the homework
-    instructions.
+      instructions.
     - No dynamic memory allocation or pointer arithmetic.
     - Does not implement any VM instruction using a separate function.
     - Runs on Eustis.
@@ -65,7 +65,7 @@ int base(int BP, int L)
 }
 
 
-//print function
+// print function
 void print_state(int PC, int BP, int SP) {
     printf("%d %d %d ", PC, BP, SP);
     int i, arb = BP;
@@ -80,7 +80,7 @@ void print_state(int PC, int BP, int SP) {
 int main(int argc, char *argv[]) 
 {
 
-    // more than 1 argument check
+    // exactly 1 argument check
     if (argc != 2) {
         fprintf(stderr, "ERROR: ONLY USE 1 input.txt\n");
         return 1;
@@ -101,8 +101,7 @@ int main(int argc, char *argv[])
     int addr = PAS_SIZE - 1;
     int instructionCount = 0;
     int lowestUsed = PAS_SIZE;    // last loaded M (track to set SP later)
-
-    // read from file, load instructions into PAS
+    
     while (fscanf(input, "%d %d %d", &op, &L, &M) == 3) 
     {
         pas[addr--] = op;  // OP
@@ -120,23 +119,23 @@ int main(int argc, char *argv[])
     int BP = SP - 1;
     CODE_FLOOR = SP;
 
-    //fetch-execute cycle
+    // fetch-execute cycle
     instruction ir;
     int halt = 0;
 
-    //print values
+    // print initial values
     printf("Initial values: %d %d %d\n", PC, BP, SP);
     
     // main execution loop
-    do{
-        //fetch cycle
+    do {
+        // fetch cycle
         ir.op = pas[PC];
         ir.l = pas[PC - 1];
         ir.m = pas[PC - 2];
         PC -= 3;
         
-        //print instruction before execution
-        int delayFlag = (ir.op == 9); // print sys after we execute it (matches instructions formatting)
+        // print instruction before execution
+        int delayFlag = (ir.op == 9); // print SYS after we execute it (matches instructions formatting)
         if (!delayFlag) 
         {
             if (ir.op == 2) // OPR (arithmetic operations)
@@ -144,10 +143,21 @@ int main(int argc, char *argv[])
                 // array for OPR mnemonics
                 static const char* opr_arithmetic[] = 
                 {
-                    "RTN","ADD","SUB","MUL","DIV","EQL","NEQ","LSS","LEQ","GTR","GEQ"
+                    "RTN",  // 0
+                    "ADD",  // 1
+                    "SUB",  // 2
+                    "MUL",  // 3
+                    "DIV",  // 4
+                    "EQL",  // 5
+                    "NEQ",  // 6
+                    "LSS",  // 7
+                    "LEQ",  // 8
+                    "GTR",  // 9
+                    "GEQ",  // 10
+                    "EVEN"  // 11
                 };
                 const char* name;
-                if (ir.m >= 0 && ir.m <= 10) 
+                if (ir.m >= 0 && ir.m <= 11) 
                 {
                     name = opr_arithmetic[ir.m];
                 } 
@@ -161,101 +171,125 @@ int main(int argc, char *argv[])
             {
                 printf("%s %d %d ", op_mnemonics[ir.op - 1], ir.l, ir.m);
             } 
-            else // invalid opcode
+            else // invalid opcode (should not occur in valid input)
             {
                 printf("OP%d %d %d ", ir.op, ir.l, ir.m);
             }
         }
        
-            
-        //execution
+        // execution
         switch(ir.op){
-            case 1: //LIT
+            case 1: // LIT
                 SP--;
                 pas[SP] = ir.m;
                 break;
-            case 2: //OPR
+
+            case 2: // OPR
                 switch(ir.m){
-                    case 0://RTN
+                    case 0: // RTN
                         SP = BP + 1;
                         BP = pas[SP - 2];
                         PC = pas[SP - 3];
                         break;
-                    case 1://ADD
+
+                    case 1: // ADD
                         pas[SP + 1] += pas[SP];
                         SP++;
                         break;
-                    case 2://SUB
+
+                    case 2: // SUB
                         pas[SP + 1] -= pas[SP];
                         SP++;
                         break;
-                    case 3://MUL
+
+                    case 3: // MUL
                         pas[SP + 1] *= pas[SP];
                         SP++;
                         break;
-                    case 4://DIV
+
+                    case 4: // DIV
                         pas[SP + 1] /= pas[SP];
                         SP++;
                         break;
-                    case 5: //EQL
+
+                    case 5: // EQL
                         pas[SP + 1] = (pas[SP + 1] == pas[SP]);
                         SP++;
                         break;
-                    case 6: //NEQ
+
+                    case 6: // NEQ
                         pas[SP + 1] = (pas[SP + 1] != pas[SP]);
                         SP++;
                         break;
-                    case 7://LSS
+
+                    case 7: // LSS
                         pas[SP + 1] = (pas[SP + 1] < pas[SP]);
                         SP++;
                         break;
-                    case 8: //LEQ
+
+                    case 8: // LEQ
                         pas[SP + 1] = (pas[SP + 1] <= pas[SP]);
                         SP++;
                         break;
-                    case 9: //GTR
+
+                    case 9: // GTR
                         pas[SP + 1] = (pas[SP + 1] > pas[SP]);
                         SP++;
                         break;
-                    case 10: //GEQ
+
+                    case 10: // GEQ
                         pas[SP + 1] = (pas[SP + 1] >= pas[SP]);
                         SP++;
                         break;
+
+                    case 11: // EVEN
+                        // Replace top of stack with 1 if even, 0 if odd
+                        // Stack pointer does NOT change
+                        pas[SP] = (pas[SP] % 2 == 0);
+                        break;
                 }
                 break;
-            case 3: //LOD
+
+            case 3: // LOD
                 SP--;
                 pas[SP] = pas[base(BP, ir.l) - ir.m];
                 break;
-            case 4: //STO
+
+            case 4: // STO
                 pas[base(BP, ir.l) - ir.m] = pas[SP];
                 SP++;
                 break;
-            case 5: //CAL
-                pas[SP - 1] = base(BP, ir.l); //SL
-                pas[SP - 2] = BP;             //DL
-                pas[SP - 3] = PC;             //RA
+
+            case 5: // CAL
+                pas[SP - 1] = base(BP, ir.l); // SL
+                pas[SP - 2] = BP;             // DL
+                pas[SP - 3] = PC;             // RA
                 BP = SP - 1;
                 PC = TOP - ir.m;
                 break;
-            case 6: //INC
+
+            case 6: // INC
                 SP -= ir.m;
                 break;
-            case 7: //JMP
+
+            case 7: // JMP
                 PC = (TOP - ir.m);
                 break;
-            case 8: //JPC
+
+            case 8: // JPC
                 if (pas[SP] == 0) {
                     PC = TOP - ir.m;
                 }
                 SP++;
                 break;
+
             case 9: // SYS
                 switch (ir.m) {
                     case 1: // output
                         printf("Output result is: %d\n", pas[SP]);
                         SP++;
                         break;
+
                     case 2: // read
                         printf("Please Enter an Integer: ");
                         SP--;
@@ -265,9 +299,11 @@ int main(int argc, char *argv[])
                             return 1;
                         }
                         break;
+
                     case 3: // hlt
                         halt = 1;
                         break;
+
                     default:
                         fprintf(stderr, "runtime error: invalid SYS m=%d\n", ir.m);
                         return 1;
@@ -276,8 +312,12 @@ int main(int argc, char *argv[])
                 printf("SYS %d %d ", ir.l, ir.m);
                 print_state(PC, BP, SP);
                 continue;  
-            }       
-            print_state(PC, BP, SP); // print state for current execution
-        } while (!halt);
+        }       
+
+        // print state for current execution
+        print_state(PC, BP, SP);
+
+    } while (!halt);
+
     return 0;
 }

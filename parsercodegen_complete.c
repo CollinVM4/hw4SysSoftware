@@ -41,56 +41,56 @@ Due Date: Friday, November 21, 2025 at 11:59 PM ET
 
 // Enum Definitions
 enum token_type {
-skipsym = 1, identsym, numbersym, plussym, minussym,
-multsym, slashsym, eqlsym, neqsym,
-lessym, leqsym, gtrsym, geqsym, lparentsym,
-rparentsym, commasym, semicolonsym, periodsym, becomessym,
-beginsym, endsym, ifsym, fisym, thensym, whilesym,
-dosym, callsym, constsym, varsym, procsym,
-writesym, readsym, elsesym, evensym
+    skipsym = 1, identsym, numbersym, plussym, minussym,
+    multsym, slashsym, eqlsym, neqsym,
+    lessym, leqsym, gtrsym, geqsym, lparentsym,
+    rparentsym, commasym, semicolonsym, periodsym, becomessym,
+    beginsym, endsym, ifsym, fisym, thensym, whilesym,
+    dosym, callsym, constsym, varsym, procsym,
+    writesym, readsym, elsesym, evensym
 };
 
 enum opcode {
-LIT = 1, OPR, LOD, STO, CAL, INC, JMP, JPC, SYS
+    LIT = 1, OPR, LOD, STO, CAL, INC, JMP, JPC, SYS
 };
 
 enum symbol_kind {
-CONSTANT = 1, VARIABLE = 2, PROCEDURE = 3
+    CONSTANT = 1, VARIABLE = 2, PROCEDURE = 3
 };
 
 // Struct Definitions
 typedef struct {
-int kind; // const = 1, var = 2, proc = 3
-char name[MAX_IDENT_LEN]; // symbol name
-int val; // value for constants
-int level; // scope level
-int addr; // address (or code index for procedures)
-int mark; // marked for deletion (0 = valid, 1 = invalid)
+    int kind; // const = 1, var = 2, proc = 3
+    char name[MAX_IDENT_LEN]; // symbol name
+    int val; // value for constants
+    int level; // scope level
+    int addr; // address (or code index for procedures)
+    int mark; // marked for deletion (0 = valid, 1 = invalid)
 } symbol;
 
 typedef struct {
-int op; // operation code
-int l; // lexicographical level
-int m; // modifier
+    int op; // operation code
+    int l;  // lexicographical level
+    int m;  // modifier
 } instruction;
 
 typedef struct {
-int type; // token type
-char name[MAX_IDENT_LEN]; // identifier name or number string
-int value; // numeric value
+    int type; // token type
+    char name[MAX_IDENT_LEN]; // identifier name or number string
+    int value; // numeric value
 } token;
 
 // Global Variables
 instruction code[MAX_CODE_LENGTH];
 symbol sym_table[MAX_SYMBOL_TABLE_SIZE];
 int code_index = 0; // Next available code index
-int sym_index = 0; // Next available symbol table index
+int sym_index = 0;  // Next available symbol table index
 int token_list[10000]; // Array to hold all tokens
 char token_lexeme[10000][MAX_IDENT_LEN]; // Array to hold lexemes/values
 int token_count = 0; // Total tokens read
-int token_ptr = 0; // Current token index
-int error_flag = 0; // Flag to indicate an error has occurred
-FILE *code_file; // File pointer for elf.txt
+int token_ptr = 0;   // Current token index
+int error_flag = 0;  // Flag to indicate an error has occurred
+FILE *code_file;     // File pointer for elf.txt
 
 // The current token's ID, lexeme/value, and numeric value (if applicable)
 int current_token;
@@ -118,6 +118,12 @@ void expression(int level);
 void term(int level);
 void factor(int level);
 
+// *** CHANGED ***
+// helper: convert a code[] instruction index to a VM code address (cell offset from TOP)
+int code_address(int index) {
+    return index * 3;
+}
+
 // Load tokens from "tokens.txt" into tokenList
 void read_token_list()
 {
@@ -127,7 +133,7 @@ void read_token_list()
         exit(EXIT_FAILURE);
     }
     token_count = 0;
-    
+
     // Loop until we can't read another token ID
     while (fscanf(fp, "%d", &token_list[token_count]) == 1) {
         int token_id = token_list[token_count];
@@ -217,11 +223,11 @@ void emit(int op, int l, int m) {
         fprintf(stderr, "Error: Code array overflow.\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // Add instruction to code array
     code[code_index].op = op;
-    code[code_index].l = l;
-    code[code_index].m = m;
+    code[code_index].l  = l;
+    code[code_index].m  = m;
     code_index++; // increment code index
 }
 
@@ -250,7 +256,7 @@ void print_symbol_table() {
         else if (sym_table[i].kind == VARIABLE) kind_str = "VAR";
         else if (sym_table[i].kind == PROCEDURE) kind_str = "PROC";
         else kind_str = "???";
-        
+
         printf("%-5s| %-11s | %5d | %5d | %7d | %d\n",
                kind_str, sym_table[i].name, sym_table[i].val,
                sym_table[i].level, sym_table[i].addr, sym_table[i].mark);
@@ -277,6 +283,7 @@ void write_code_to_file() {
 
 // function to find symbol in symbol table, respecting scope
 int find_symbol(const char *name, int level) {
+    (void)level; // level currently unused, but kept for signature compatibility
     for (int i = sym_index - 1; i >= 0; i--) {
         if (strcmp(sym_table[i].name, name) == 0 && sym_table[i].mark == 0) {
             return i;
@@ -292,7 +299,7 @@ int add_symbol(int kind, const char *name, int val, int level, int addr) {
         fprintf(stderr, "Error: Symbol table overflow.\n");
         return -1;
     }
-    
+
     // check for duplicate in current scope
     for (int i = sym_index - 1; i >= 0; i--) {
         if (sym_table[i].level < level) break; // Exited current scope
@@ -301,15 +308,15 @@ int add_symbol(int kind, const char *name, int val, int level, int addr) {
             return -1;
         }
     }
-    
+
     // add symbol to table
     sym_table[sym_index].kind = kind;
     strncpy(sym_table[sym_index].name, name, MAX_IDENT_LEN);
     sym_table[sym_index].name[MAX_IDENT_LEN - 1] = '\0';
-    sym_table[sym_index].val = val;
+    sym_table[sym_index].val   = val;
     sym_table[sym_index].level = level;
-    sym_table[sym_index].addr = addr;
-    sym_table[sym_index].mark = 0; // Mark as valid (in scope)
+    sym_table[sym_index].addr  = addr; // note: for procedures this is a *code index*
+    sym_table[sym_index].mark  = 0;    // Mark as valid (in scope)
     return sym_index++; // increment symbol index upon return
 }
 
@@ -330,24 +337,25 @@ void block(int level, int *data_size) {
     *data_size = 3; // reserve space for static link, dynamic link, return address
     int start_sym_index = sym_index;
     int jmp_addr = code_index;
-    
+
     if (level == 0) {
         emit(JMP, 0, 0); // Placeholder for main
     }
-    
+
     const_declaration(level);
     var_declaration(level, data_size);
     procedure_declaration(level);
-    
+
     if (level == 0) {
-        code[jmp_addr].m = code_index; // Patch main JMP to here
+        // *** CHANGED *** patch main JMP with VM code address
+        code[jmp_addr].m = code_address(code_index); // start of main
     }
-    
+
     emit(INC, 0, *data_size); // allocate space for variables
     statement(level);
-    
+
     unmark_symbols_at_level(level, start_sym_index);
-    
+
     if (level > 0) {
         emit(OPR, 0, 0); // RTN (Return from procedure)
     }
@@ -409,19 +417,19 @@ void procedure_declaration(int level) {
         }
         char proc_name[MAX_IDENT_LEN];
         strcpy(proc_name, current_lexeme);
-        
-        // Add procedure to symbol table, value is its starting code address
+
+        // Add procedure to symbol table, addr is its starting code index
         add_symbol(PROCEDURE, proc_name, 0, level, code_index);
         advance_token();
-        
+
         if (current_token != semicolonsym) {
             error(19);
         }
         advance_token();
-        
+
         int proc_data_size;
         block(level + 1, &proc_data_size);
-        
+
         if (current_token != semicolonsym) {
             error(19);
         }
@@ -432,7 +440,7 @@ void procedure_declaration(int level) {
 void statement(int level) {
     int sym_idx;
     int cx1, cx2;
-    
+
     // Handle different statement types
     if (current_token == identsym) {
         char ident_name[MAX_IDENT_LEN];
@@ -463,7 +471,8 @@ void statement(int level) {
         if (sym_table[sym_idx].kind != PROCEDURE) {
             error(18);
         }
-        emit(CAL, level - sym_table[sym_idx].level, sym_table[sym_idx].addr);
+        // *** CHANGED ***: convert procedure code index to VM code address
+        emit(CAL, level - sym_table[sym_idx].level, code_address(sym_table[sym_idx].addr));
         advance_token();
     } else if (current_token == readsym) {// read statement
         advance_token();
@@ -503,38 +512,42 @@ void statement(int level) {
         }
         advance_token();
         cx1 = code_index;
-        emit(JPC, 0, 0);
+        emit(JPC, 0, 0); // to be patched
         statement(level);
-        
+
         cx2 = code_index;
-        emit(JMP, 0, 0);
-        code[cx1].m = code_index; // Patch JPC to ELSE part
-        
+        emit(JMP, 0, 0); // to be patched
+        // *** CHANGED ***: patch JPC to ELSE-part address
+        code[cx1].m = code_address(code_index);
+
         if (current_token != elsesym) {
             error(13);
         }
         advance_token();
         statement(level);
-        
-        code[cx2].m = code_index; // Patch JMP to FI part
-        
+
+        // *** CHANGED ***: patch JMP to FI (after else) address
+        code[cx2].m = code_address(code_index);
+
         if (current_token != fisym) {
             error(12);
         }
         advance_token();
     } else if (current_token == whilesym) {// while...do statement
         advance_token();
-        cx1 = code_index;
+        cx1 = code_index; // loop start
         condition(level);
         if (current_token != dosym) {
             error(14);
         }
         advance_token();
         cx2 = code_index;
-        emit(JPC, 0, 0);
+        emit(JPC, 0, 0); // exit test, to patch
         statement(level);
-        emit(JMP, 0, cx1);
-        code[cx2].m = code_index;
+        // *** CHANGED ***: back-edge jump to start of loop
+        emit(JMP, 0, code_address(cx1));
+        // *** CHANGED ***: patch JPC to jump to instruction after loop body
+        code[cx2].m = code_address(code_index);
     }
 }
 
@@ -542,7 +555,7 @@ void condition(int level) {
     if (current_token == evensym) {
         advance_token();
         expression(level);
-        emit(OPR, 0, 11); // EVEN per ISA Table 2
+        emit(OPR, 0, 11); // EVEN per ISA
     } else {
         expression(level); // left-hand side
         int rel_op = current_token;
@@ -573,9 +586,9 @@ void expression(int level) {
         advance_token();
         term(level);
         if (op == plussym) {
-            emit(OPR, 0, 1); // ADD per ISA Table 2
+            emit(OPR, 0, 1); // ADD
         } else {
-            emit(OPR, 0, 2); // SUB per ISA Table 2
+            emit(OPR, 0, 2); // SUB
         }
     }
 }
@@ -589,9 +602,9 @@ void term(int level) {
         advance_token();
         factor(level);
         if (op == multsym) {
-            emit(OPR, 0, 3); // MUL per ISA Table 2
+            emit(OPR, 0, 3); // MUL
         } else {
-            emit(OPR, 0, 4); // DIV per ISA Table 2
+            emit(OPR, 0, 4); // DIV
         }
     }
 }
@@ -635,7 +648,7 @@ int main(void) {
         return EXIT_FAILURE;
     }
     read_token_list(); // Load tokens from file
-    
+
     // Check if any tokens were read
     if (token_count == 0) {
         fprintf(stderr, "Error: Token input file '%s' is empty or invalid.\n",
