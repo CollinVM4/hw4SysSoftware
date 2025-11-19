@@ -235,11 +235,12 @@ void emit(int op, int l, int m) {
 void print_assembly_code() {
     // mnemonic def for opcodes
     char *opname[] = {"", "LIT", "OPR", "LOD", "STO", "CAL", "INC", "JMP", "JPC", "SYS"};
-    // Print column header
-    printf("Line OP L M\n");
+    // Print assembly code header
+    printf("\nAssembly Code:\n");
+    printf("Line\tOP\tL\tM\n");
     // loop through code array and print instructions
     for (int i = 0; i < code_index; i++) {
-        printf("%3d %s %d %d\n", i, opname[code[i].op], code[i].l, code[i].m);
+        printf("%d\t%s\t%d\t%d\n", i, opname[code[i].op], code[i].l, code[i].m);
     }
 }
 
@@ -247,21 +248,14 @@ void print_assembly_code() {
 void print_symbol_table() {
     // symbol table header
     printf("\nSymbol Table:\n");
-    printf("Kind | Name | Value | Level | Address | Mark\n");
-    printf("-----|-------------|-------|-------|---------|-----\n");
+    printf("Kind | Name        | Value | Level | Address | Mark\n");
+    printf("--------------------------------------------------\n");
     //loop through symbol table and print entries
     for (int i = 0; i < sym_index; i++) {
-        const char* kind_str;
-        if (sym_table[i].kind == CONSTANT) kind_str = "CONST";
-        else if (sym_table[i].kind == VARIABLE) kind_str = "VAR";
-        else if (sym_table[i].kind == PROCEDURE) kind_str = "PROC";
-        else kind_str = "???";
-
-        printf("%-5s| %-11s | %5d | %5d | %7d | %d\n",
-               kind_str, sym_table[i].name, sym_table[i].val,
+        printf("%d    | %-11s | %5d | %5d | %7d | %4d\n",
+               sym_table[i].kind, sym_table[i].name, sym_table[i].val,
                sym_table[i].level, sym_table[i].addr, sym_table[i].mark);
     }
-    printf("\n");
 }
 
 // function to mark symbols from a specific level as out-of-scope
@@ -664,11 +658,9 @@ int main(void) {
     }
     program(); // Start parsing
     if (!error_flag) {
-        print_symbol_table();
         print_assembly_code();
+        print_symbol_table();
         write_code_to_file();
-        printf("Parsing and code generation successful. Output written to %s.\n",
-               CODE_FILENAME);
     }
     fclose(code_file); //Finished wooooo
     return EXIT_SUCCESS;

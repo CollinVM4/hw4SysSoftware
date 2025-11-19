@@ -1,0 +1,5 @@
+var x, y;
+begin
+read x;
+if x < 10 then write 1 else write 0 fi;
+end.

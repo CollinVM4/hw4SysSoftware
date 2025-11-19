@@ -1,0 +1,5 @@
+var x;
+begin
+read x;
+if even x then write 1 else write 0 fi;
+end.
