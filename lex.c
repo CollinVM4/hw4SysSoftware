@@ -1,25 +1,41 @@
 /*
-Assignment :
-lex - Lexical Analyzer for PL /0
-Authors: < Collin Van Meter, Jadon Milne >
+Assignment:
+HW4 - Complete Parser and Code Generator for PL/0
+    (with Procedures, Call, and Else)
+
+Author(s): Collin Van Meter, Jadon Milne
+
 Language: C (only)
+
 To Compile:
-gcc -O2 -std=c11 -o lex lex.c
+    Scanner:
+        gcc -O2 -std=c11 -o lex lex.c
+    Parser/Code Generator:
+        gcc -O2 -std=c11 -o parsercodegen_complete parsercodegen_complete.c
+    Virtual Machine:
+        gcc -O2 -std=c11 -o vm vm.c
+
 To Execute (on Eustis):
-./lex <input file>
+    ./lex <input_file.txt>
+    ./parsercodegen_complete
+    ./vm elf.txt
 where:
-<input file> is the path to the PL /0 source program
+    <input_file.txt> is the path to the PL/0 source program
 Notes:
-- Implement a lexical analyser for the PL /0 language.
-- The program must detect errors such as
-- numbers longer than five digits
-- identifiers longer than eleven characters
-- invalid characters
-- The output format must exactly match the specification.
-- Tested on Eustis.
-Class: COP 3402 - System Software - Fall 2025
+    - lex.c accepts ONE command-line argument (input PL/0 source file)
+    - parsercodegen_complete.c accepts NO command-line arguments
+    - Input filename is hard-coded in parsercodegen_complete.c
+    - Implements recursive-descent parser for extended PL/0 grammar
+    - Supports procedures, call statements, and if-then-else
+    - Generates PM/0 assembly code (see Appendix A for ISA)
+    - VM must support EVEN instruction (OPR 0 11)
+    - All development and testing performed on Eustis
+
+Class: COP3402 - System Software - Fall 2025
+
 Instructor: Dr. Jie Lin
-Due Date: Friday, October 3, 2025 at 11:59 PM ET
+
+Due Date: Friday, November 21, 2025 at 11:59 PM ET
 */
 #include <stdio.h>
 #include <stdlib.h>

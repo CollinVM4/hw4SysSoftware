@@ -1,27 +1,40 @@
 /*
 Assignment:
-HW4 - Parser and Code Generator for PL/0
+HW4 - Complete Parser and Code Generator for PL/0
+    (with Procedures, Call, and Else)
+
 Author(s): Collin Van Meter, Jadon Milne
+
 Language: C (only)
+
 To Compile:
-Scanner:
-gcc -O2 -std=c11 -o lex lex.c
-Parser/Code Generator:
-gcc -O2 -std=c11 -o parsercodegen_complete parsercodegen_complete.c
+    Scanner:
+        gcc -O2 -std=c11 -o lex lex.c
+    Parser/Code Generator:
+        gcc -O2 -std=c11 -o parsercodegen_complete parsercodegen_complete.c
+    Virtual Machine:
+        gcc -O2 -std=c11 -o vm vm.c
+
 To Execute (on Eustis):
-./lex <input_file.txt>
-./parsercodegen_complete
+    ./lex <input_file.txt>
+    ./parsercodegen_complete
+    ./vm elf.txt
 where:
-<input_file.txt> is the path to the PL/0 source program
+    <input_file.txt> is the path to the PL/0 source program
 Notes:
-- lex.c accepts ONE command-line argument (input PL/0 source file)
-- parsercodegen_complete.c accepts NO command-line arguments
-- Input filename is hard-coded in parsercodegen_complete.c
-- Implements recursive-descent parser for full PL/0 grammar (with procedures and if-else)
-- Generates PM/0 assembly code (see Appendix A for ISA)
-- All development and testing performed on Eustis
+    - lex.c accepts ONE command-line argument (input PL/0 source file)
+    - parsercodegen_complete.c accepts NO command-line arguments
+    - Input filename is hard-coded in parsercodegen_complete.c
+    - Implements recursive-descent parser for extended PL/0 grammar
+    - Supports procedures, call statements, and if-then-else
+    - Generates PM/0 assembly code (see Appendix A for ISA)
+    - VM must support EVEN instruction (OPR 0 11)
+    - All development and testing performed on Eustis
+
 Class: COP3402 - System Software - Fall 2025
+
 Instructor: Dr. Jie Lin
+
 Due Date: Friday, November 21, 2025 at 11:59 PM ET
 */
 
@@ -118,8 +131,8 @@ void expression(int level);
 void term(int level);
 void factor(int level);
 
-// *** CHANGED ***
-// helper: convert a code[] instruction index to a VM code address (cell offset from TOP)
+
+// helper to not spam index * 3
 int code_address(int index) {
     return index * 3;
 }
@@ -164,7 +177,6 @@ void advance_token() {
     if (token_ptr < token_count) {
         current_token = token_list[token_ptr];
         if (current_token == skipsym) {
-            error_flag = 1;
             error(1);
             return;
         }
@@ -341,7 +353,7 @@ void block(int level, int *data_size) {
     procedure_declaration(level);
 
     if (level == 0) {
-        // *** CHANGED *** patch main JMP with VM code address
+        // patch main JMP with VM code address
         code[jmp_addr].m = code_address(code_index); // start of main
     }
 
@@ -465,7 +477,7 @@ void statement(int level) {
         if (sym_table[sym_idx].kind != PROCEDURE) {
             error(18);
         }
-        // *** CHANGED ***: convert procedure code index to VM code address
+        // patch procedure call with VM code address
         emit(CAL, level - sym_table[sym_idx].level, code_address(sym_table[sym_idx].addr));
         advance_token();
     } else if (current_token == readsym) {// read statement
@@ -511,7 +523,7 @@ void statement(int level) {
 
         cx2 = code_index;
         emit(JMP, 0, 0); // to be patched
-        // *** CHANGED ***: patch JPC to ELSE-part address
+        // patch JPC to ELSE-part address
         code[cx1].m = code_address(code_index);
 
         if (current_token != elsesym) {
@@ -520,7 +532,7 @@ void statement(int level) {
         advance_token();
         statement(level);
 
-        // *** CHANGED ***: patch JMP to FI (after else) address
+        // patch JMP to FI (after else) address
         code[cx2].m = code_address(code_index);
 
         if (current_token != fisym) {
@@ -538,9 +550,9 @@ void statement(int level) {
         cx2 = code_index;
         emit(JPC, 0, 0); // exit test, to patch
         statement(level);
-        // *** CHANGED ***: back-edge jump to start of loop
+        // back-edge jump to start of loop
         emit(JMP, 0, code_address(cx1));
-        // *** CHANGED ***: patch JPC to jump to instruction after loop body
+        // patch JPC to jump to instruction after loop body
         code[cx2].m = code_address(code_index);
     }
 }
